@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2017 Limor Fried for Adafruit Industries
-#
-# SPDX-License-Identifier: MIT
-
 import time
 import array
 import math
@@ -76,11 +72,10 @@ def modulate(bright, indmode):
     else:
         bright += 3
     for i in range(0, 10, 1):
-        cp.pixels[i] = bright
+        cp.pixels[i] = (0,bright, 0)
     return (bright, indmode)
 
-for i in range(0, 10, 1):
-    cp.pixels[i] = (0, 0, 255)
+
 
 timenow = time.monotonic()
 timelast = 0.0
@@ -100,7 +95,7 @@ while True:
             else:
                 cp.pixels.brightness = 0.1
                 mode = True
-            time.sleep(0.1)
+            time.sleep(0.3)
         if mode:
             alarm_mode = alarm(alarm_mode)
             st = modulate(bluecol, inmode)
@@ -112,10 +107,9 @@ while True:
             timelast = tt[1]
             delta = tt[2]
             totaltime += delta
-            print(delta)
             if totaltime > 0.8:
                 if modek == False:
-                    colorled(0, 10, 1, (0, 255, 0), 0)
+                    colorled(0, 10, 1, (255, 0, 0), 0)
                     modek = True
                 else:
                     colorled(9, -1, -1, (0, 0, 0), 0)
