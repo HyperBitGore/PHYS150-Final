@@ -6,51 +6,19 @@ import digitalio
 from adafruit_circuitplayground import cp
 from adafruit_circuitplayground.express import cpx
 
-"""try:
-    from audiocore import RawSample
-except ImportError:
-    from audioio import RawSample
-
-try:
-    from audioio import AudioOut
-except ImportError:
-    try:
-        from audiopwmio import PWMAudioOut as AudioOut
-    except ImportError:
-        pass  # not always supported by every board!
-
-
-FREQUENCY = 2540  # 440 Hz middle 'A'
-SAMPLERATE = 8000  # 8000 samples/second, recommended!
-
-
-# Generate one period of sine wav.
-length = SAMPLERATE // FREQUENCY
-sine_wave = array.array("H", [0] * length)
-for i in range(length):
-    sine_wave[i] = int(math.sin(math.pi * 2 * i / length) * (2 ** 15) + 2 ** 15)
-
-# Enable the speaker
-speaker_enable = digitalio.DigitalInOut(board.SPEAKER_ENABLE)
-speaker_enable.direction = digitalio.Direction.OUTPUT
-speaker_enable.value = True
-
-audio = AudioOut(board.SPEAKER)
-sine_wave_sample = RawSample(sine_wave)"""
-
 alarm_mode = False
 
-def alarm(amode):
-
-    if alarm_mode:
+def alarm(amode, lasta):
+    x, y, z = cpx.acceleration
+    if lasta[0] != 0 and lasta[1] != 0 and lasta[2] != 0:
+        if abs(x - lasta[0]) > 5.0 or abs(y - lasta[1]) > 5.0 or abs(z - lasta[2]) > 5.0:
+            print("move")
+            amode = True
+    #print(str(x) + " " + str(y) + " " + str(z))
+    if amode:
         print("alarm")
-        #audio.play(sine_wave_sample, loop=False)
-    else:
-        print("not alarm")
-    #audio.play(sine_wave_sample, loop=True)  # Play the single sine_wave sample continuously...
-    #cp.play_file("shoota.wav")
-    time.sleep(0.001)
-    return amode
+        cp.play_file("alarm.wav")
+    return (amode, (x, y, z))
 
 def colorled(start, end, move, color, t):
     for i in range(start, end, move):
@@ -87,20 +55,35 @@ def getdelta(t1, t2):
     delta = t1 - t2
     return (t1, t2, delta)
 
+last_a = (0, 0, 0)
+
 while True:
         if cpx.button_a:
             if mode == True:
                 cp.pixels.brightness = 0.1
                 mode = False
+                alarm_mode = False
             else:
                 cp.pixels.brightness = 0.1
                 mode = True
             time.sleep(0.3)
         if mode:
-            alarm_mode = alarm(alarm_mode)
-            st = modulate(bluecol, inmode)
-            bluecol = st[0]
-            inmode = st[1]
+            #delta time stuff
+            tt = getdelta(timenow, timelast)
+            timenow = tt[0]
+            timelast = tt[1]
+            delta = tt[2]
+            totaltime += delta
+            #alarm stuff
+            if totaltime > 0.001:
+                ret1 = alarm(alarm_mode, last_a)
+                alarm_mode = ret1[0]
+                last_a = ret1[1]
+                print(str(last_a[0]) + " " + str(last_a[1]) + " " + str(last_a[2]))
+                st = modulate(bluecol, inmode)
+                bluecol = st[0]
+                inmode = st[1]
+                totaltime = 0
         else:
             tt = getdelta(timenow, timelast)
             timenow = tt[0]
@@ -115,5 +98,3 @@ while True:
                     colorled(9, -1, -1, (0, 0, 0), 0)
                     modek = False
                 totaltime = 0
- # for the duration of the sleep (in seconds)
-#audio.stop()  # and then stop.
